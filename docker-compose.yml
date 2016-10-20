@@ -74,7 +74,7 @@ services:
 
   # database accessible only on backend network.
   soaf-mongo:
-    image: sscpac/mongo:alpine
+    image: mongo:3
     container_name: mongo
     networks:
       - backend
