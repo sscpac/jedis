@@ -43,7 +43,7 @@ services:
   # FastCGI Process Manager (FPM) that handles php requests from owncloud-reverse-proxy 
   # container
   owncloud:
-    image: sscpac/owncloud:9.0-fpm-alpine
+    image: sscpac/owncloud:9.0-fpm
     container_name: owncloud
     environment:
       # determine if owncloud should defer to CAS server for authentication
