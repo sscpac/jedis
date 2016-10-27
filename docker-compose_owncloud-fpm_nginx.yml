@@ -31,8 +31,6 @@ services:
     volumes:
       - ./owncloud/config/jedis.config.php:/var/www/owncloud/config/jedis.config.php
       - ./owncloud/user_cas/user_cas.config.php:/var/www/owncloud/config/user_cas.config.php
-      #- ./owncloud/config/jedis.config.php:/tmp/owncloud_config/jedis.config.php
-      #- ./owncloud/user_cas/user_cas.config.php:/tmp/owncloud_config/user_cas.config.php
       - ./jedis-dev.spawar.navy.mil/ssl/jedis-dev.spawar.navy.mil.crt:/var/www/owncloud/resources/config/jedis-dev.spawar.navy.mil.crt
       - /var/www/owncloud
     networks:
