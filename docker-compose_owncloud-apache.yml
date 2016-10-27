@@ -1,0 +1,39 @@
+version: "2"
+services:
+  owncloud:
+    image: sscpac/owncloud:9.0-apache
+    container_name: owncloud
+    environment:
+      # determine if owncloud should defer to CAS server for authentication
+      ENABLE_CAS : "false"
+    ports:
+      - 80:8080
+    depends_on:
+      - postgres
+    volumes:
+      - ./owncloud/user_cas/user_cas.config.php:/var/www/html/config/user_cas.config.php
+      - ./jedis-dev.spawar.navy.mil/apache/httpd.conf:/etc/apache2/httpd.conf
+    networks:
+      # remove frontend after testing CAS
+      - frontend
+      - backend
+
+  # database accessible only on backend network.  
+  postgres:
+    image: postgres:9.5
+    container_name: postgres
+    environment:
+        # postgres/mysecretpassword are the default user/password from the
+        # official image. Eventually we need to extend the image and create
+        # our own init scripts for separate db, user, etc.
+        POSTGRES_USER : postgres
+        POSTGRES_PASSWORD : mysecretpassword
+    networks:
+      - backend
+
+# Defined networks
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge

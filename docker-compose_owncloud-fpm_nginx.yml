@@ -1,34 +1,12 @@
 version: "2"
 services:
-  # Reverse proxy that handles https requests from all clients.  
-  # Proxy requests from - to 
-  # /calendar - owncloud-reverse-proxy container
-  # /soaf - soaf container
-  # /example - soaf container
-  jedis-dev.spawar.navy.mil:
-    image: nginx:alpine
-    # use jedis-dev.spawar.navy.mil so that other containers can reference this container
-    # without having to specify an "extra_hosts" value.  
-    container_name: jedis-dev.spawar.navy.mil
-    hostname: jedis-dev.spawar.navy.mil
-    # 80 redirected to 443 in nginx configuration
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - owncloud-reverse-proxy
-    volumes:
-      - ./jedis-dev.spawar.navy.mil/nginx/conf.d:/etc/nginx/conf.d
-      # self-signed certs
-      - ./jedis-dev.spawar.navy.mil/ssl:/etc/nginx/ssl
-    networks:
-      - frontend
-
   # Reverse proxy that handles https request and defers to owncloud container's FPM
   # to process php requests. 
   owncloud-reverse-proxy:
     image: nginx:alpine
     container_name: owncloud-reverse-proxy
+    ports:
+      - "80:80"
     depends_on:
       - owncloud
     volumes:
@@ -47,12 +25,14 @@ services:
     container_name: owncloud
     environment:
       # determine if owncloud should defer to CAS server for authentication
-      ENABLE_CAS : "true"
+      ENABLE_CAS : "false"
     depends_on:
       - postgres
     volumes:
       - ./owncloud/config/jedis.config.php:/var/www/owncloud/config/jedis.config.php
       - ./owncloud/user_cas/user_cas.config.php:/var/www/owncloud/config/user_cas.config.php
+      #- ./owncloud/config/jedis.config.php:/tmp/owncloud_config/jedis.config.php
+      #- ./owncloud/user_cas/user_cas.config.php:/tmp/owncloud_config/user_cas.config.php
       - ./jedis-dev.spawar.navy.mil/ssl/jedis-dev.spawar.navy.mil.crt:/var/www/owncloud/resources/config/jedis-dev.spawar.navy.mil.crt
       - /var/www/owncloud
     networks:
@@ -69,45 +49,6 @@ services:
         POSTGRES_USER : postgres
         POSTGRES_PASSWORD : mysecretpassword
     networks:
-      - backend
-
-  # database accessible only on backend network.
-  soaf-mongo:
-    image: mongo:3
-    container_name: mongo
-    networks:
-      - backend
-
-  # ldap server accessible only on the backend network
-  soaf-ldap:
-    image: sscpac/soaf-ldap
-    container_name: ldap
-    networks:
-      - backend
-
-  # Central Authentication Service (CAS) 
-  cas:
-    image: sscpac/soaf-cas
-    container_name: cas
-    depends_on:
-     - soaf-ldap
-    environment:
-     - SERVERHOST=jedis-dev.spawar.navy.mil
-    networks:
-      - frontend
-      - backend
-
-  # Secure open architecture framework server (SOAF)
-  soaf:
-    image: sscpac/soaf-server
-    container_name: soaf
-    depends_on:
-     - soaf-mongo                
-     - soaf-ldap
-    environment:
-     - SERVERHOST=jedis-dev.spawar.navy.mil
-    networks:
-      - frontend
       - backend
 
 # Defined networks
