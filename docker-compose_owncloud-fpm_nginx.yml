@@ -1,0 +1,59 @@
+version: "2"
+services:
+  # Reverse proxy that handles https request and defers to owncloud container's FPM
+  # to process php requests. 
+  owncloud-reverse-proxy:
+    image: nginx:alpine
+    container_name: owncloud-reverse-proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - owncloud
+    volumes:
+      - ./owncloud-reverse-proxy/nginx/conf.d:/etc/nginx/conf.d
+    volumes_from:
+      # handles php processing
+      - owncloud
+    networks:
+      - frontend
+      - backend
+
+  # FastCGI Process Manager (FPM) that handles php requests from owncloud-reverse-proxy 
+  # container
+  owncloud:
+    image: sscpac/owncloud:9.0-fpm
+    container_name: owncloud
+    environment:
+      # determine if owncloud should defer to CAS server for authentication
+      ENABLE_CAS : "false"
+    depends_on:
+      - postgres
+    volumes:
+      - ./owncloud/config/jedis.config.php:/var/www/owncloud/config/jedis.config.php
+      - ./owncloud/user_cas/user_cas.config.php:/var/www/owncloud/config/user_cas.config.php
+      #- ./owncloud/config/jedis.config.php:/tmp/owncloud_config/jedis.config.php
+      #- ./owncloud/user_cas/user_cas.config.php:/tmp/owncloud_config/user_cas.config.php
+      - ./jedis-dev.spawar.navy.mil/ssl/jedis-dev.spawar.navy.mil.crt:/var/www/owncloud/resources/config/jedis-dev.spawar.navy.mil.crt
+      - /var/www/owncloud
+    networks:
+      - backend
+
+  # database accessible only on backend network.  
+  postgres:
+    image: postgres:9.5
+    container_name: postgres
+    environment:
+        # postgres/mysecretpassword are the default user/password from the
+        # official image. Eventually we need to extend the image and create
+        # our own init scripts for separate db, user, etc.
+        POSTGRES_USER : postgres
+        POSTGRES_PASSWORD : mysecretpassword
+    networks:
+      - backend
+
+# Defined networks
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
